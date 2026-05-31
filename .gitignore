@@ -1,0 +1,34 @@
+# macOS
+.DS_Store
+
+# NAND2Tetris tools output
+*.out
+*.log
+
+# Python (you'll use this for Project 6 assembler)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Course software suite (not my work — download from nand2tetris.org)
+tools/
+
+# Uncompleted projects (course stubs — un-ignore each as it's finished)
+projects/2/
+projects/3/
+projects/4/
+projects/5/
+projects/6/
+projects/7/
+projects/8/
+projects/9/
+projects/10/
+projects/11/
+projects/12/
+projects/13/
