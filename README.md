@@ -6,7 +6,7 @@ Building a modern computer from first principles, following the NAND2Tetris cour
 
 - [x] Project 1: Boolean Logic
 - [x] Project 2: Boolean Arithmetic
-- [ ] Project 3: Memory
+- [x] Project 3: Memory
 - [ ] Project 4: Machine Language
 - [ ] Project 5: Computer Architecture
 - [ ] Project 6: Assembler (Python)
