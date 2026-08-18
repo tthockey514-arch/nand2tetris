@@ -1,0 +1,92 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/5/CPU.hdl
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM = 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M?
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+	// A register and its input mux
+    // Opcode - instruction[15]:
+    //  0 -> A-instruction (Mux selects 15-bit constant)
+    //  1 -> C-instruction (Mux selects ALU output)
+    Mux16(a=instruction, b=aluout, sel=instruction[15], out=aregin);
+    // Load A register if either:
+    //  A-instruction (opcode' = 1),
+    //  C-instruction (opcode = 1) and destination is A (instruction[5] = 1)
+    Not(in=instruction[15], out=notopcode);
+    And(a=instruction[15], b=instruction[5], out=cdesta);
+    Or(a=notopcode, b=cdesta, out=loada);
+    ARegister(in=aregin, load=loada, out=aregout, out[0..14]=addressM);
+
+    // ALU's two inputs:
+    //  D register,
+    //  A register or inM (instruction[12] = 0 -> A, instruction[12] = 1 -> inM)
+    //  No need to gate mux with opcode since A-instruction only loads A reg with
+    //  instruction and never ALU output
+    Mux16(a=aregout, b=inM, sel=instruction[12], out=muxaluout);
+    ALU(x=dregout, y=muxaluout, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=aluout, out=outM, zr=zrout, ng=ngout);
+
+    // D register
+    // Loads ALU output only when:
+    //  Opcode = 1 (C-instruction),
+    //  Destination is D (instruction[4] = 1)
+    And(a=instruction[15], b=instruction[4], out=loadd);
+    DRegister(in=aluout, load=loadd, out=dregout);
+
+    // Write to memory
+    // When:
+    //  Opcode = 1 (C-instruction),
+    //  Destination is M (instruction[3] = 1)
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // PC register
+    //  A register contains jump address
+    //  Reset straight from CPU input
+    //  Increment always set to 1 (PC internal priority -> reset > load > inc)
+    //  Loads only if either:
+    //      C-instruction and ALU out is negative (ng = 1),
+    //      C-instruction and ALU out is zero (zr = 1),
+    //      C-instruction and ALU out is positive (ng = 0 and zr = 0)
+    // Jump if ALU out is negative
+    And(a=instruction[15], b=instruction[2], out=checkifneg);
+    And(a=checkifneg, b=ngout, out=jumpneg);
+    // Jump if ALU out is zero
+    And(a=instruction[15], b=instruction[1], out=checkifzero);
+    And(a=checkifzero, b=zrout, out=jumpzero);
+    // Jump if ALU out is positive
+    And(a=instruction[15], b=instruction[0], out=checkifpos);
+    Or(a=ngout, b=zrout, out=ngorzr);
+    Not(in=ngorzr, out=posout);
+    And(a=checkifpos, b=posout, out=jumppos);
+    // Check if any jump conditions are true
+    Or(a=jumpneg, b=jumpzero, out=jumpnegorzero);
+    Or(a=jumpnegorzero, b=jumppos, out=loadpc);
+    PC(in=aregout, load=loadpc, inc=true, reset=reset, out[0..14]=pc);
+}

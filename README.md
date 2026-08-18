@@ -8,7 +8,7 @@ Building a modern computer from first principles, following the NAND2Tetris cour
 - [x] Project 2: Boolean Arithmetic
 - [x] Project 3: Memory
 - [x] Project 4: Machine Language
-- [ ] Project 5: Computer Architecture
+- [x] Project 5: Computer Architecture
 - [ ] Project 6: Assembler (Python)
 - [ ] Project 7: VM I — Stack Arithmetic
 - [ ] Project 8: VM II — Program Control
